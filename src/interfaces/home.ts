@@ -12,5 +12,6 @@ export interface PlanFormData{
     budget?:number | undefined,
     days?:number | undefined,
     retry?:boolean,
-    retry_id?:number
+    retry_id?:number,
+    queue_id:string,
 }

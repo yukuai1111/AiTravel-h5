@@ -26,7 +26,7 @@
                 <div class="aboout-list">
                     <van-cell-group title="关于" class="serve-title">
                         <van-cell title="关于我们" is-link to="/my/about" />
-                        <van-cell title="版本信息" value="v1.0.2" />
+                        <van-cell title="版本信息" value="v1.0.3" />
                     </van-cell-group>
                 </div>
             </div>

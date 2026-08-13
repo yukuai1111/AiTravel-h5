@@ -70,7 +70,7 @@ const routes = [
         path: '/sharePage',
         name: 'sharePage',
         component: () => import('@/views/SharePage.vue')
-    },{
+    }, {
         path: '/noFound',
         name: 'noFound',
         component: () => import('@/views/NoFound.vue')
@@ -82,9 +82,10 @@ const routes = [
     }
 ]
 
+const basePath=import.meta.env.MODE==='development'?'/':'/project/AiTravel-h5/'
 //创建路由对象
 const router = createRouter({
-    history: createWebHistory('/project/AiTravel-h5'), // 路由基础路径,防止触发路由守卫
+    history: createWebHistory(basePath), // 路由基础路径,防止触发路由守卫
     routes
 })
 
@@ -92,7 +93,8 @@ const router = createRouter({
 router.beforeEach((to, _from, next) => {
     const userStore = useUserStore()
     //如果走到不存在页面
-    if(to.matched.length === 0){
+    if (to.matched.length === 0) {
+        console.warn('【路由匹配失败，进入404】')
         next('/noFound')
         return
     }
@@ -103,5 +105,6 @@ router.beforeEach((to, _from, next) => {
     }
     next()
 })
+
 //导出路由对象
 export default router

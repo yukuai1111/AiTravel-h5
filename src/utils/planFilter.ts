@@ -23,10 +23,11 @@ const normalizePlanItem = (plan: RawPlanItem): StandardPlanItem => {
         return {
             itemKey: plan.plan_id,
             title: plan.title,
-            planId:plan.plan_id,
+            planId: plan.plan_id,
             generateTime: plan.create_time,
             state: plan.status,
             failReason: plan.fail_reason,
+            queue_id: plan.queue_id,
             raw: plan,
         }
     }
@@ -35,19 +36,19 @@ const normalizePlanItem = (plan: RawPlanItem): StandardPlanItem => {
         return {
             itemKey: plan.collection_id,
             title: plan.title,
-            planId:plan.plan_id,
+            planId: plan.plan_id,
             generateTime: plan.plan_time,
             state: plan.plan_status,
             failReason: plan.plan_fail_reason,
             collectTime: plan.collect_time,
             raw: plan,
         }
-    } else if('share_id' in plan){
+    } else if ('share_id' in plan) {
         //分享列表
         return {
             itemKey: plan.share_id,
             title: plan.title,
-            planId:plan.plan_id,
+            planId: plan.plan_id,
             generateTime: plan.plan_create_time,
             state: plan.plan_status,
             failReason: plan.plan_fail_reason,

@@ -85,11 +85,13 @@
 <script setup lang="ts">
 import { deletePlan, sharePlan, cancelSharePlan, deleteSharedPlan, getPlan } from '@/api/travel'
 import dayjs from 'dayjs'
-import { showConfirmDialog, showToast } from 'vant'
+import { showConfirmDialog, showToast, showFailToast } from 'vant'
 import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { countDown } from '@/utils/countDown'
 import type { StandardPlanItem } from '@/interfaces/travel'
+import { useAIStore } from '@/stores/aiStore'
+const aiStore = useAIStore()
 const router = useRouter()
 const props = defineProps({
     list: {
@@ -127,6 +129,14 @@ const handleDelete = (plan_id: number) => {
         message: '删除后将无法恢复',
     }).then(async () => {
         try {
+            //如果是生成中，就先删除队列/请求
+            const plan = renderList.value.find(item => item.planId === plan_id)
+            console.log('plan', plan)
+            if (plan && plan.state === 'pending' && plan.queue_id) {
+                aiStore.removePlan(plan.queue_id)
+                aiStore.removeController(plan.queue_id)
+            }
+            //再去删除数据库
             await deletePlan(plan_id)
             emit('refresh', true)
             showToast('删除成功')
@@ -142,7 +152,6 @@ const handleDelete = (plan_id: number) => {
     })
 }
 //分享的链接
-const share_baseurl = import.meta.env.VITE_SHARE_BASEURL
 const share_url = ref<string>('')
 //展示分享链接的弹窗
 const showSharePopup = ref<boolean>(false)
@@ -151,9 +160,11 @@ const handleShare = async (plan_id: number) => {
     try {
         const res = await sharePlan(plan_id)
         if (res.data) {
+            const domain = window.location.origin
+            const basePath = import.meta.env.BASE_URL
             //http://127.0.0.1:5173/share?code=mskgnut91nfR
-            share_url.value = `${share_baseurl}?code=${res.data.shareCode}&time=${res.data.share_time}`
-            // console.log(share_url.value)
+            share_url.value = `${domain}${basePath}sharePage?code=${res.data.shareCode}&time=${res.data.share_time}`
+            console.log(share_url.value)
             showSharePopup.value = true
         }
     } catch (err: unknown) {
@@ -174,7 +185,7 @@ const cancelShare = async (code: string) => {
         try {
             await cancelSharePlan(code)
             showToast('取消分享成功')
-            emit('refresh',true)
+            emit('refresh', true)
         } catch (err: unknown) {
             if (err instanceof Error) {
                 showToast(err.message)
@@ -211,13 +222,12 @@ const deleteShared = async (code: string) => {
 //复制成功
 const copySuccess = () => {
     const selection = window.getSelection()?.toString() || ''
-    if (selection && selection.includes(share_baseurl)) {
-        if (selection.includes(share_url.value)) {
-            showToast('复制成功')
-            showSharePopup.value = false
-        } else {
-            showToast('复制完整链接，才能分享给好友看哦~')
-        }
+    if (!selection) return
+    if (selection.trim() === share_url.value) {
+        showToast('复制成功')
+        showSharePopup.value = false
+    } else {
+        showToast('复制完整链接，才能分享给好友看哦~')
     }
 }
 
@@ -239,9 +249,16 @@ const toDetail = async (plan_id: number, state: string) => {
             loadingMap.value.set(plan_id, false)
             return showToast('方案不存在')
         }
+        //加入队列
+        plan.queue_id = `retry_${plan_id}_${Date.now()}`
+        //判断是否方案队列已满
+        if (!aiStore.addPlan(plan.queue_id)) return showFailToast('最多只能生成2个方案哦，请耐心等待~')
+        //创建控制器
+        const controller = aiStore.createController(plan.queue_id)
         plan.state = 'pending'
+        showToast('重试中，请耐心等待~')
         try {
-            const res = await getPlan({ retry: true, retry_id: plan_id })
+            const res = await getPlan({ retry: true, retry_id: plan_id, queue_id: plan.queue_id }, controller.signal)
             emit('refresh', true)
             if (res.data && res.data.retry_id) {
                 //再次失败
@@ -262,13 +279,20 @@ const toDetail = async (plan_id: number, state: string) => {
                 showToast(res.data?.planData.city + '-' + res.data?.planData.days + '日旅游方案-预算' + res.data?.planData.totalBudget + ' 重试成功')
             }
         } catch (err) {
-            if (err instanceof Error) {
+            // 主动取消时不显示错误
+            if (err instanceof DOMException && err.name === 'AbortError') {
+                return
+            }
+            else if (err instanceof Error) {
                 showToast(err.message)
             } else {
                 showToast(err as string)
             }
         } finally {
             loadingMap.value.set(plan_id, false)
+            //删除队列/请求
+            aiStore.removePlan(plan.queue_id)
+            aiStore.removeController(plan.queue_id)
         }
         return
     }
@@ -351,7 +375,6 @@ onUnmounted(() => {
             position: relative;
             overflow: hidden;
 
-            // 默认：成功状态，显示左侧蓝色竖线
             &::before {
                 content: "";
                 width: 4px;
@@ -362,12 +385,15 @@ onUnmounted(() => {
                 background: #4096ff;
             }
 
-            // pending：隐藏左侧竖线
-            &.pending::before {
-                display: none;
+            &.pending {
+                background: #c7d1df;
+
+                &::before {
+                    display: none;
+
+                }
             }
 
-            // fail：隐藏左侧竖线 + 卡片整体浅灰弱化
             &.fail {
                 background: #e7e9ec;
                 opacity: 0.8;

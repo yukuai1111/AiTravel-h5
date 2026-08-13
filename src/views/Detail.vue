@@ -37,7 +37,7 @@
                 <div class="flex-center" style="margin-top: 20px;">
                     <van-button
                         v-if="userStore.isLogin && origin === 'home' && formData.city && formData.budget && formData.days"
-                        type="primary" @click="getTravelPlan(queueId)" :loading="planLoading">重新获取</van-button>
+                        type="primary" @click="getTravelPlan(`plan_${Date.now()}`)" :loading="planLoading">重新获取</van-button>
                     <van-button v-else-if="userStore.isLogin && origin === 'history' && plan_id" type="primary"
                         @click="getDetail" :loading="planLoading">重新获取</van-button>
                     <van-button v-else-if="!userStore.isLogin" type="primary"
@@ -121,7 +121,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref} from 'vue';
+import { onMounted, reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import type { PlanFormData } from '@/interfaces/home'
 import type { TravelDetail } from '@/interfaces/api'
@@ -139,8 +139,9 @@ const formData = reactive<PlanFormData>({
     city: '',
     budget: undefined,
     days: undefined,
-    retry:false,
+    retry: false,
     retry_id: undefined,
+    queue_id: ""
 })
 
 //路由来源
@@ -151,8 +152,6 @@ const isLoading = ref<boolean>(false)
 const msg = ref<string>('')
 //展开面板
 const activeNames = ref<number[]>([])
-//方案队列id
-const queueId = ref<string>('')
 //重新获取按钮loading状态
 const planLoading = ref<boolean>(false)
 
@@ -179,28 +178,36 @@ const getTravelPlan = async (queue_id?: string) => {
     //判断是否正在加载中
     if (planLoading.value) return showFailToast('请稍后再试')
     planLoading.value = true
-    //判断是不是重试，不是就退出
-    if (!queue_id && queueId.value&&!aiStore.plans.includes(queueId.value)) {
-        planLoading.value=false
+    //判断是不是重试或者首次，如果都不是就退出
+    if (!queue_id && formData.queue_id && !aiStore.plans.includes(formData.queue_id)) {
+        planLoading.value = false
         //判断队列是否存在（判断来源对不对）
         router.push('/')
         return showFailToast('未知方案，请重试~')
     }
-    //是的话就重试
+    //如果是重试
+    if(queue_id){
+        formData.queue_id = queue_id
+        if(!aiStore.addPlan(formData.queue_id)){
+            planLoading.value = false
+            return showFailToast('最多只能生成2个方案，请耐心等待~')
+        }
+    }
     try {
         //创造一个控制器
-        const controller = aiStore.createController(queueId.value)
+        const controller = aiStore.createController(formData.queue_id)
         isLoading.value = true
         msg.value = ''
         const res = await getPlan(formData, controller?.signal)
         if (res.data && res.data.planData) {
             plan_id.value = res.data.plan_id
             planData.value = res.data.planData
-        }else if(res.data&&res.data.retry_id){
-            formData.retry_id=res.data.retry_id
-            formData.retry=true
-            msg.value=res.data.failReason||`请用${formData.retry_id}重试~`
+        } else if (res.data && res.data.retry_id) {
+            formData.retry_id = res.data.retry_id
+            formData.retry = true
+            msg.value = res.data.failReason || `请用${formData.retry_id}重试~`
         }
+
     } catch (err) {
         // 主动取消时不显示错误
         if (err instanceof DOMException && err.name === 'AbortError') {
@@ -215,9 +222,9 @@ const getTravelPlan = async (queue_id?: string) => {
             msg.value = '获取规划方案失败，请检查网络连接'
         }
     } finally {
-        //成功后清除队列和控制器
-        aiStore.removePlan(queueId.value)
-        aiStore.removeController(queueId.value)
+        //清除队列/控制器
+        aiStore.removeController(formData.queue_id)
+        aiStore.removePlan(formData.queue_id)
         isLoading.value = false
         planLoading.value = false
     }
@@ -371,8 +378,9 @@ onMounted(() => {
     //方案id
     plan_id.value = Number(route.query.plan_id)
     //队列id
-    queueId.value = route.query.queueId as string
-    if (queueId.value && formData.city && formData.budget && formData.days && origin.value === 'home') {
+    formData.queue_id= route.query.queueId as string
+
+    if (formData.queue_id && formData.city && formData.budget && formData.days && origin.value === 'home') {
         getTravelPlan()
     }
     else if (plan_id.value && origin.value === 'history') {

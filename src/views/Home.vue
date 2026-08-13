@@ -66,7 +66,8 @@ const aiStore = useAIStore()
 const formData = reactive<PlanFormData>({
     city: '',
     budget: undefined,
-    days: undefined
+    days: undefined,
+    queue_id: ""
 })
 
 //城市选择器
@@ -120,22 +121,20 @@ const handlePlan = () => {
     if (formData.days && formData.days > 7) return showFailToast('旅行天数不得大于7天！',)
 
     //生成队列唯一的id
-    const queueId = `plan_${Date.now()}`
+    formData.queue_id = `plan_${Date.now()}`
     //判断是否方案队列已满
-    if (aiStore.isMatchMax) return showFailToast('最多只能生成2个方案哦，请耐心等待~')
-    //判断id是否重复
-    if (!aiStore.addPlan(queueId)) return showFailToast('方案已经存在哦，请耐心等待~')
+    if (!aiStore.addPlan(formData.queue_id)) return showFailToast('最多只能生成2个方案哦，请耐心等待~')
 
     //判断是否正在加载中
     if (planLoading.value) return showFailToast('请稍后再试')
 
     planLoading.value = true
-    console.log('准备跳转详情页', queueId)
+    console.log('准备跳转详情页', formData.queue_id)
     console.log('跳转前', aiStore.plans)
     router.push({
         name: 'detail',
         query: {
-            queueId,
+            queueId: formData.queue_id,
             city: formData.city,
             budget: formData.budget,
             days: formData.days,

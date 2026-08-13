@@ -10,6 +10,7 @@ export interface getHistoryPlanRes {
         create_time: number,
         status: string,
         fail_reason: string | null,
+        queue_id: string,
     }[]
 }
 
@@ -86,5 +87,6 @@ export type StandardPlanItem = {
     isShareCancel?:boolean,
     timeText?:string,
     shareExpireTime?:number,
+    queue_id?:string,
     raw: RawPlanItem,
 }
