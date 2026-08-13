@@ -8,7 +8,9 @@ export interface CityPicker{
     columnIndex?:number,
 }
 export interface PlanFormData{
-    city:string,
-    budget:number | undefined,
-    days:number | undefined,
+    city?:string,
+    budget?:number | undefined,
+    days?:number | undefined,
+    retry?:boolean,
+    retry_id?:number
 }

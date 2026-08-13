@@ -5,7 +5,7 @@
             </van-nav-bar>
         </div>
         <div class="page-content">
-            <PlanList :list="historyList" @refresh="getHistoryList" origin="history" :loading="loading"
+            <PlanList :list="standardList" @refresh="getHistoryList" origin="history" :loading="loading"
                 :hasMore="hasMore" :error="error"></PlanList>
         </div>
     </div>
@@ -13,12 +13,14 @@
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { getHistoryPlan } from '@/api/travel';
 import { showToast } from 'vant'
-import type { getHistoryPlanRes } from '@/interfaces/travel'
+import type { getHistoryPlanRes, StandardPlanItem } from '@/interfaces/travel'
+import { filterPlanList, normalizePlanList } from '@/utils/planFilter'
 
 const router = useRouter()
+//原始的历史数据
 const historyList = ref<getHistoryPlanRes['planResult']>([])
 //下一个游标
 const nextCursor = ref<number | null>(null)
@@ -28,14 +30,20 @@ const hasMore = ref<boolean>(true)
 const loading = ref<boolean>(false)
 //是否出错
 const error = ref<boolean>(false)
-const getHistoryList = async () => {
+
+const getHistoryList = async (isRefresh: boolean) => {
     if (loading.value) return
     loading.value = true
     error.value = false
+    if(isRefresh){
+        historyList.value = []
+        nextCursor.value = null
+        hasMore.value = true
+    }
     try {
-        const res = await getHistoryPlan(10, nextCursor.value)
+        const res = await getHistoryPlan(8, nextCursor.value)
         if (res.data) {
-            historyList.value =[...historyList.value, ...res.data.planResult]
+            historyList.value = [...historyList.value, ...res.data.planResult]
             nextCursor.value = res.data.nextCursor
             hasMore.value = res.data.hasMore
         }
@@ -51,12 +59,20 @@ const getHistoryList = async () => {
         setTimeout(() => {
             //通知父组件再次获取数据
             loading.value = false
-        }, 1000)
+        }, 1900)
     }
 }
 
+
+//把原始数据进行处理
+const standardList = computed<StandardPlanItem[]>(() => {
+    //先过滤不要的数据
+    const filterList = filterPlanList(historyList.value)
+    //在标准化数据
+    return normalizePlanList(filterList)
+})
 onMounted(() => {
-    getHistoryList()
+    getHistoryList(true)
 })
 </script>
 

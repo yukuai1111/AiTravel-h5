@@ -5,19 +5,21 @@
             </van-nav-bar>
         </div>
         <div class="page-content">
-            <PlanList :list="collectList" @refresh="getCollectPlanList" origin="collect" :loading="loading"
+            <PlanList :list="standardList" @refresh="getCollectPlanList" origin="collect" :loading="loading"
                 :hasMore="hasMore" :error="error"></PlanList>
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router';
 import { getCollectPlan } from '@/api/travel';
 import { showToast } from 'vant'
-import type { getCollectPlanRes } from '@/interfaces/travel'
+import type{ StandardPlanItem,  getCollectPlanRes } from '@/interfaces/travel'
+import { filterPlanList,normalizePlanList } from '@/utils/planFilter';
 const router = useRouter()
+//原始收藏数据
 const collectList = ref<getCollectPlanRes['collectPlan']>([])
 //是否加载
 const loading = ref<boolean>(false)
@@ -32,7 +34,7 @@ const getCollectPlanList = async () => {
     loading.value = true
     error.value = false
     try {
-        const res = await getCollectPlan()
+        const res = await getCollectPlan(6, nextCursor.value)
         if (res.data) {
             collectList.value =[...collectList.value, ...res.data.collectPlan]
             nextCursor.value = res.data.nextCursor
@@ -50,9 +52,15 @@ const getCollectPlanList = async () => {
         setTimeout(() => {
             //通知父组件再次获取数据
             loading.value = false
-        }, 1000)
+        }, 1900)
     }
 }
+
+//整理数据
+const standardList=computed<StandardPlanItem[]>(()=>{
+    const filterList=filterPlanList(collectList.value)
+    return normalizePlanList(filterList)
+})
 onMounted(() => {
     getCollectPlanList()
 })

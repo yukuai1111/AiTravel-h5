@@ -126,16 +126,15 @@ const changeAvatar = async (file: UploaderFileListItem | UploaderFileListItem[])
         showToast('请上传图片')
         return
     }
-    if (item.file.size > 1024 * 1024 * 2) {
-        showToast('图片大小不能超过2MB')
+    if (item.file.size > 1024 * 1024 * 5) {
+        showToast('图片大小不能超过5MB')
         return
     }
     // 跳转图片预览页,进行裁剪
+    //把图片信息先存在sessionStorage里
+    sessionStorage.setItem('previewAvatar', item.content || URL.createObjectURL(item.file))
     router.push({
-        name: 'preview',
-        query: {
-            avatar: item.content || URL.createObjectURL(item.file)
-        }
+        name: 'preview'
     })
 }
 watchEffect(() => {

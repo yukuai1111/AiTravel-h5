@@ -5,9 +5,9 @@
             :description="props.origin === 'collect' ? '暂无收藏方案，快去收藏一个吧~' : props.origin === 'share' ? '暂无分享方案，快去分享一个吧~' : '暂无方案，快去生成一个吧~'" />
         <van-list v-else @load="onBottom" offset="10" :loading="props.loading" loading-text="加载中..."
             :finished="!props.hasMore" finished-text="没有更多了" :error="props.error" error-text="加载出错，请重试">
-            <van-swipe-cell class="swiper-card" v-for="plan in props.list"
-                :key="props.origin === 'history' ? plan.plan_id : plan.collection_id">
-                <div class="card-item" @click="toDetail(plan.plan_id)">
+            <van-swipe-cell class="swiper-card" v-for="plan in renderList" :key="plan.itemKey">
+                <div class="card-item" @click="toDetail(plan.planId, plan.state)"
+                    :class="{ 'fail': plan.state === 'fail', 'pending': plan.state === 'pending' }">
                     <div class="card-icon">
                         <van-icon v-if="props.origin !== 'share'" name="orders-o" size="28" />
                         <van-icon v-else name="todo-list-o" size="28" />
@@ -16,16 +16,17 @@
                         <!-- 历史/收藏方案 -->
                         <div v-if="props.origin !== 'share'" style="padding:10px">
                             <div class="title">{{ plan.title }}</div>
-                            <div v-if="props.origin === 'history'" class="time">
-                                生成时间：{{ dayjs(plan.create_time).format('YYYY-MM-DD HH:mm') }}
+                            <div class="time" v-if="plan.state === 'success'">
+                                生成时间：{{ dayjs(plan.generateTime).format('YYYY-MM-DD HH:mm') }}
                             </div>
-                            <div v-else style="display: flex; flex-direction: column;">
-                                <div class="time">
-                                    生成时间：{{ dayjs(plan.plan_time).format('YYYY-MM-DD HH:mm') }}
-                                </div>
-                                <div v-if="props.origin === 'collect'" class="time">收藏时间：{{
-                                    dayjs(plan.collect_time).format('YYYY-MM-DD HH:mm') }}
-                                </div>
+                            <div class="time" v-if="plan.state === 'fail'">
+                                失败原因：{{ plan.failReason }}
+                            </div>
+                            <div class="time" v-if="plan.state === 'pending'">
+                                待生成...
+                            </div>
+                            <div v-if="props.origin === 'collect'" class="time">收藏时间：{{
+                                dayjs(plan.collectTime).format('YYYY-MM-DD HH:mm') }}
                             </div>
                         </div>
                         <!-- 分享方案 -->
@@ -36,21 +37,22 @@
                                     <van-icon name="delete-o" size="22" @click.stop="deleteShared(plan.code!)" />
                                 </div>
                                 <div class="time">
-                                    分享时间：{{ dayjs(plan.share_time).format('YYYY-MM-DD HH:mm') }}
+                                    分享时间：{{ dayjs(plan.shareTime).format('YYYY-MM-DD HH:mm') }}
                                     分享码：{{ plan.code }}
                                     <van-icon @click.stop="cancelShare(plan.code!)" style="font-weight: 600;"
-                                        v-if="plan.share_is_cancel === 1 && plan.timeText && plan.timeText !== '已失效'"
+                                        v-if="!plan.isShareCancel && plan.timeText && plan.timeText !== '已失效'"
                                         name="revoke" size="18" />
                                 </div>
                             </template>
                             <template #value>
                                 <van-loading type="spinner" v-if="!plan.timeText" size="26" />
                                 <div v-else>
-                                    <div v-if="plan.share_is_cancel === 0"
-                                        style="font-weight: 600;width:70px;color: #868686; font-size: 15px;">
+                                    <div v-if="plan.isShareCancel"
+                                        style="font-weight: 600;color: #868686; font-size: 14px;">
                                         已失效
                                     </div>
-                                    <div v-else style="font-weight:600;width:70px;font-size: 14px;"
+                                    <div v-else
+                                        style="font-weight:600;width:100%;flex-shrink:0;text-align: right;font-size: 14px;"
                                         :style="{ color: plan.timeText === '已失效' ? '#868686' : '#d1a958', fontSize: plan.timeText === '已失效' ? '15px' : '14px' }">
                                         {{ plan.timeText }}
                                     </div>
@@ -62,9 +64,9 @@
                 <template #right v-if="props.origin !== 'share'">
                     <div class="button-container">
                         <van-button class="delete-button" v-if="props.origin === 'history'"
-                            @click="handleDelete(plan.plan_id)"><van-icon name="delete-o" size="24" /></van-button>
-                        <van-button class="share-button" @click="handleShare(plan.plan_id)"><van-icon name="share-o"
-                                size="24" /></van-button>
+                            @click="handleDelete(plan.planId)"><van-icon name="delete-o" size="24" /></van-button>
+                        <van-button v-if="plan.state === 'success'" class="share-button"
+                            @click="handleShare(plan.planId)"><van-icon name="share-o" size="24" /></van-button>
                     </div>
                 </template>
             </van-swipe-cell>
@@ -74,40 +76,24 @@
         <van-popup class="sharePopup" closeable :close-on-click-overlay="false" v-model:show="showSharePopup">
             <div class="title">分享链接</div>
             <div class="tip">生成链接成功，可以分享给好友看啦~</div>
-            <van-field :border="false" size="large" class="url_field" rows="2" type="textarea" v-model="share_url"
+            <van-field :border="false" size="large" class="url_field" rows="4" type="textarea" v-model="share_url"
                 readonly />
-            <van-button type="primary" block @click="copyLink" style="margin-top:10px">
-                复制链接
-            </van-button>
         </van-popup>
     </div>
 </template>
 
 <script setup lang="ts">
-import { deletePlan, sharePlan, cancelSharePlan, deleteSharedPlan } from '@/api/travel'
+import { deletePlan, sharePlan, cancelSharePlan, deleteSharedPlan, getPlan } from '@/api/travel'
 import dayjs from 'dayjs'
 import { showConfirmDialog, showToast } from 'vant'
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { countDown } from '@/utils/countDown'
+import type { StandardPlanItem } from '@/interfaces/travel'
 const router = useRouter()
 const props = defineProps({
     list: {
-        type: Array as () => {
-            plan_id: number,
-            title: string,
-            create_time?: number,
-            collection_id?: number,
-            collect_time?: number,
-            plan_time?: number,
-            share_id?: number,
-            share_expire_time: number,
-            code?: string,
-            share_is_cancel?: number,
-            plan_create_time?: number,
-            share_time?: number,
-            timeText?: string,  //记录倒计时的文本
-        }[],
+        type: Array as () => StandardPlanItem[],
         default: () => []
     },
     origin: {
@@ -127,6 +113,12 @@ const props = defineProps({
         default: false
     }
 })
+//先把分享的数据复制一份
+const localShareList = ref<StandardPlanItem[]>([])
+//用于遍历的数组（为了区分分享）
+const renderList = computed(() => {
+    return props.origin === 'share' ? localShareList.value : props.list
+})
 const emit = defineEmits(['refresh'])
 //删除计划
 const handleDelete = (plan_id: number) => {
@@ -136,7 +128,7 @@ const handleDelete = (plan_id: number) => {
     }).then(async () => {
         try {
             await deletePlan(plan_id)
-            emit('refresh')
+            emit('refresh', true)
             showToast('删除成功')
         } catch (err: unknown) {
             if (err instanceof Error) {
@@ -182,7 +174,7 @@ const cancelShare = async (code: string) => {
         try {
             await cancelSharePlan(code)
             showToast('取消分享成功')
-            emit('refresh')
+            emit('refresh',true)
         } catch (err: unknown) {
             if (err instanceof Error) {
                 showToast(err.message)
@@ -203,7 +195,7 @@ const deleteShared = async (code: string) => {
         try {
             await deleteSharedPlan(code)
             showToast('删除成功')
-            emit('refresh')
+            emit('refresh', true)
         } catch (err: unknown) {
             if (err instanceof Error) {
                 showToast(err.message)
@@ -215,18 +207,71 @@ const deleteShared = async (code: string) => {
         showToast('已取消删除')
     })
 }
-//复制链接
-const copyLink = () => {
-    navigator.clipboard.writeText(share_url.value)
-    showToast({
-        message: '复制成功,可以分享给好友看啦~',
-        duration: 2000
-    })
-    showSharePopup.value = false
+
+//复制成功
+const copySuccess = () => {
+    const selection = window.getSelection()?.toString() || ''
+    if (selection && selection.includes(share_baseurl)) {
+        if (selection.includes(share_url.value)) {
+            showToast('复制成功')
+            showSharePopup.value = false
+        } else {
+            showToast('复制完整链接，才能分享给好友看哦~')
+        }
+    }
 }
 
+//重试方案的加载
+const loadingMap = ref<Map<number, boolean>>(new Map())
 //查看方案详情
-const toDetail = (plan_id: number) => {
+const toDetail = async (plan_id: number, state: string) => {
+    if (loadingMap.value.get(plan_id) === true) return
+    loadingMap.value.set(plan_id, true)
+    if (state === 'pending') {
+        loadingMap.value.set(plan_id, false)
+        showToast('方案生产中，请耐心等待~')
+        return
+    }
+    if (state === 'fail') {
+        //找到要重试的方案，修改状态
+        const plan = renderList.value.find(item => item.planId === plan_id)
+        if (!plan) {
+            loadingMap.value.set(plan_id, false)
+            return showToast('方案不存在')
+        }
+        plan.state = 'pending'
+        try {
+            const res = await getPlan({ retry: true, retry_id: plan_id })
+            emit('refresh', true)
+            if (res.data && res.data.retry_id) {
+                //再次失败
+                plan.state = 'fail'
+                plan.failReason = res.data.failReason || '重试失败，请稍后重试~'
+                emit('refresh', true)
+                showToast(res.data.failReason || '重试失败，请稍后重试~')
+            } else {
+                //重试成功
+                plan.state = 'success'
+                router.push({
+                    name: 'detail',
+                    query: {
+                        plan_id,
+                        origin: 'history'
+                    }
+                })
+                showToast(res.data?.planData.city + '-' + res.data?.planData.days + '日旅游方案-预算' + res.data?.planData.totalBudget + ' 重试成功')
+            }
+        } catch (err) {
+            if (err instanceof Error) {
+                showToast(err.message)
+            } else {
+                showToast(err as string)
+            }
+        } finally {
+            loadingMap.value.set(plan_id, false)
+        }
+        return
+    }
     router.push({
         name: 'detail',
         query: {
@@ -242,13 +287,26 @@ const formatTitle = (title: string) => {
     return titles[0] + '-' + titles[1]
 }
 
+//实现倒计时
+//监听分享数据的变化
+watch(() => props.list, (newVal) => {
+    if (props.origin === 'share') {
+        //一有新数据就复制
+        localShareList.value = newVal.map(item => {
+            return { ...item }
+        }
+        )
+    }
+}, { deep: true, immediate: true })
 //定时器
 const timer = ref<number>(0)
 //更新每一条数据的倒计时文本
 const updateTimeText = () => {
-    props.list.forEach(plan => {
-        plan.timeText = countDown(Date.now(), plan.share_expire_time)
-    })
+    if (props.origin === 'share') {
+        localShareList.value.forEach(plan => {
+            plan.timeText = countDown(Date.now(), plan.shareExpireTime!)
+        })
+    }
 }
 
 //触底
@@ -262,15 +320,22 @@ onMounted(() => {
     updateTimeText()
     //之后每一秒执行一次
     timer.value = setInterval(updateTimeText, 1000)
+
+    //挂载复制监听事件
+    document.addEventListener('copy', copySuccess)
 })
 onUnmounted(() => {
     //页面卸载时清除定时器
     clearInterval(timer.value)
+    //移除复制监听事件
+    document.removeEventListener('copy', copySuccess)
 })
 </script>
 
 <style scoped lang="scss">
 .list-content {
+
+
     .swiper-card {
         margin: 12px 16px;
         border-radius: 10px;
@@ -279,31 +344,55 @@ onUnmounted(() => {
         .card-item {
             display: flex;
             align-items: center;
-            padding: 8px 20px;
-            background: linear-gradient(135deg, #f7f9fc 0%, #eef2ff 50%, #e0e7ff 100%);
+            padding: 12px;
+            background: #f0f4f9;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            position: relative;
+            overflow: hidden;
 
+            // 默认：成功状态，显示左侧蓝色竖线
+            &::before {
+                content: "";
+                width: 4px;
+                height: 100%;
+                position: absolute;
+                left: 0;
+                top: 0;
+                background: #4096ff;
+            }
 
-            .card-content {
-                flex: 1;
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-                padding: 10px;
-                gap: 9px;
+            // pending：隐藏左侧竖线
+            &.pending::before {
+                display: none;
+            }
 
-                .title {
-                    font-size: 16px;
-                    font-weight: 600;
-                    color: #333;
-                }
+            // fail：隐藏左侧竖线 + 卡片整体浅灰弱化
+            &.fail {
+                background: #e7e9ec;
+                opacity: 0.8;
 
-                .time {
-                    font-size: 14px;
-                    color: #999;
-                    margin-top: 8px;
+                &::before {
+                    display: none;
                 }
             }
+
+            .card-icon {
+                margin-right: 10px;
+            }
+
+            .title {
+                font-size: 16px;
+                font-weight: 500;
+            }
+
+            .time {
+                font-size: 13px;
+                color: #666;
+                margin-top: 4px;
+            }
         }
+
 
         .button-container {
             display: flex;
@@ -355,7 +444,8 @@ onUnmounted(() => {
     .url_field {
         font-size: 14px;
         padding: 10px;
-        margin-top: 10px
+        margin-top: 10px;
+        width: 100%;
     }
 }
 </style>

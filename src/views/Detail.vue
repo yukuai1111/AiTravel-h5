@@ -35,9 +35,10 @@
             <div v-else-if="msg">
                 <van-empty image="network" :description="msg" />
                 <div class="flex-center" style="margin-top: 20px;">
-                    <van-button v-if="userStore.isLogin && origin === 'home'&&formData.city&&formData.budget&&formData.days" type="primary"
-                        @click="getTravelPlan" :loading="planLoading">重新获取</van-button>
-                    <van-button v-else-if="userStore.isLogin && origin === 'history'&&plan_id" type="primary"
+                    <van-button
+                        v-if="userStore.isLogin && origin === 'home' && formData.city && formData.budget && formData.days"
+                        type="primary" @click="getTravelPlan(queueId)" :loading="planLoading">重新获取</van-button>
+                    <van-button v-else-if="userStore.isLogin && origin === 'history' && plan_id" type="primary"
                         @click="getDetail" :loading="planLoading">重新获取</van-button>
                     <van-button v-else-if="!userStore.isLogin" type="primary"
                         @click="router.push('/profile')">登录</van-button>
@@ -120,7 +121,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue';
+import { onMounted, reactive, ref, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import type { PlanFormData } from '@/interfaces/home'
 import type { TravelDetail } from '@/interfaces/api'
@@ -137,7 +138,9 @@ const router = useRouter()
 const formData = reactive<PlanFormData>({
     city: '',
     budget: undefined,
-    days: undefined
+    days: undefined,
+    retry:false,
+    retry_id: undefined,
 })
 
 //路由来源
@@ -172,16 +175,18 @@ const planData = ref<TravelDetail>({
     is_collected: false,
 })
 //获取规划方案
-const getTravelPlan = async () => {
+const getTravelPlan = async (queue_id?: string) => {
     //判断是否正在加载中
     if (planLoading.value) return showFailToast('请稍后再试')
     planLoading.value = true
-   //判断队列是否存在（判断来源对不对）
-    if (!aiStore.plans.includes(queueId.value)){ 
+    //判断是不是重试，不是就退出
+    if (!queue_id && queueId.value&&!aiStore.plans.includes(queueId.value)) {
+        planLoading.value=false
+        //判断队列是否存在（判断来源对不对）
         router.push('/')
         return showFailToast('未知方案，请重试~')
     }
-
+    //是的话就重试
     try {
         //创造一个控制器
         const controller = aiStore.createController(queueId.value)
@@ -191,8 +196,11 @@ const getTravelPlan = async () => {
         if (res.data && res.data.planData) {
             plan_id.value = res.data.plan_id
             planData.value = res.data.planData
+        }else if(res.data&&res.data.retry_id){
+            formData.retry_id=res.data.retry_id
+            formData.retry=true
+            msg.value=res.data.failReason||`请用${formData.retry_id}重试~`
         }
-
     } catch (err) {
         // 主动取消时不显示错误
         if (err instanceof DOMException && err.name === 'AbortError') {
@@ -207,7 +215,7 @@ const getTravelPlan = async () => {
             msg.value = '获取规划方案失败，请检查网络连接'
         }
     } finally {
-        //成功与否都删除控制器和移出队列
+        //成功后清除队列和控制器
         aiStore.removePlan(queueId.value)
         aiStore.removeController(queueId.value)
         isLoading.value = false
@@ -258,7 +266,7 @@ const getDetail = async () => {
             plan_detail.create_time = res.data.create_time
             plan_detail.content = res.data.content
             plan_detail.is_collected = res.data.is_collected
-            console.log('方案详情', plan_detail)
+            // console.log('方案详情', plan_detail)
             //先把旧标题保存
             oldTitle.value = plan_detail.title
         }
@@ -336,7 +344,7 @@ const handlePassed = async () => {
 
     try {
         const res = await changePlanTitle({ plan_id: plan_id.value, title: plan_detail.title })
-        console.log(res)
+        // console.log(res)
         if (res.data) {
             showToast('修改标题成功')
             plan_detail.title = res.data.newTitle
@@ -373,6 +381,14 @@ onMounted(() => {
         msg.value = '参数不完整或有误，请返回重试'
     }
 })
+
+// onUnmounted(() => {
+//     //用户离开页面时如果还有队列和控制器，清除队列和控制器
+//     if (queueId.value && aiStore.plans.includes(queueId.value)) {
+//         aiStore.removePlan(queueId.value)
+//         aiStore.removeController(queueId.value)
+//     }
+// })
 </script>
 
 <style scoped lang="scss">

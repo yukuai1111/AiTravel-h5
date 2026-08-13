@@ -5,8 +5,9 @@
         </div>
         <div class="page-content" v-if="userStore.isLogin && userStore.userInfo">
             <div class="user-info">
-                <div class="user-avatar">   
-                    <van-image round width="6rem" height="6rem"
+                <div class="user-avatar">
+                    <van-skeleton v-if="!userStore.userInfo.avatar" avatar avatar-size="6rem" style="margin-right: -40px;margin-left:-10px" />
+                    <van-image round width="6rem" height="6rem" v-else
                         :src="`${baseURL}${userStore.userInfo.avatar}`" />
                 </div>
                 <div class="user-data">
@@ -17,15 +18,15 @@
             <div class="list">
                 <div class="serve-list">
                     <van-cell-group title="我的服务" class="serve-title">
-                        <van-cell title="⭐我的收藏" is-link to="/my/collect"/>
-                        <van-cell title="历史记录" is-link to="/my/history"/>
-                        <van-cell title="设置" is-link to="/my/options"/>
+                        <van-cell title="⭐我的收藏" is-link to="/my/collect" />
+                        <van-cell title="历史记录" is-link to="/my/history" />
+                        <van-cell title="设置" is-link to="/my/options" />
                     </van-cell-group>
                 </div>
                 <div class="aboout-list">
                     <van-cell-group title="关于" class="serve-title">
-                        <van-cell title="关于我们" is-link to="/my/about"/>
-                        <van-cell title="版本信息" value="v1.0.0" />
+                        <van-cell title="关于我们" is-link to="/my/about" />
+                        <van-cell title="版本信息" value="v1.0.2" />
                     </van-cell-group>
                 </div>
             </div>
@@ -56,7 +57,7 @@ onMounted(async () => {
     const msg = route.query.msg as string
     if (!requireAuth(msg)) return
     //如果登录了，就从userStore里获取用户信息
-   
+
 })
 </script>
 
@@ -67,6 +68,7 @@ onMounted(async () => {
 
     .page-content {
         margin-top: 46px;
+
         .user-info {
             padding: 25px;
             display: flex;

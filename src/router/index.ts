@@ -84,12 +84,12 @@ const routes = [
 
 //创建路由对象
 const router = createRouter({
-    history: createWebHistory(),
+    history: createWebHistory('/project/AiTravel-h5'), // 路由基础路径,防止触发路由守卫
     routes
 })
 
 //路由守卫
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, _from, next) => {
     const userStore = useUserStore()
     //如果走到不存在页面
     if(to.matched.length === 0){

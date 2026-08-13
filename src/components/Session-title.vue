@@ -14,7 +14,6 @@
 
 <script setup lang="ts">
 import { showToast } from 'vant'
-import { ref, computed } from 'vue'
 import { collectPlan, cancelCollectPlan } from '@/api/travel'
 const props = defineProps({
     title: {

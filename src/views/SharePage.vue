@@ -13,7 +13,7 @@
                 <!-- 分享头部卡片 -->
                 <div class="share-card">
                     <div class="share-title">
-                        <van-image width="30" height="30" :src="`${baseUrl}${shareDetail.avatar}`" />
+                        <van-image width="30" height="30" :src="`${baseURL}${shareDetail.avatar}`" />
                         {{ shareDetail.username }} 分享了一份旅游方案给你~
                     </div>
                     <div class="share-row">
@@ -85,7 +85,7 @@ import type { getShareDetailRes } from '@/interfaces/travel'
 import dayjs from 'dayjs'
 import html2pdf from 'html2pdf.js'
 
-const baseUrl = import.meta.env.VITE_IMG_BASEURL
+const baseURL = import.meta.env.VITE_IMG_BASEURL
 const route = useRoute()
 const code = ref<string>('')
 const shareTime = ref<string>('')

@@ -98,12 +98,12 @@
             </div>
         </van-popup>
 
-        <!-- 验证码通知弹窗 -->
-        <van-notify :show="code.trim() !== ''" type="success">
-            <van-icon name="comment-o" style="font-size: 24px; padding:10px" />
-            <span>验证码：{{ code }}</span>
-        </van-notify>
     </div>
+    <!-- 验证码通知弹窗 -->
+    <van-notify :show="code.trim() !== ''" type="success" style="height: 200px;opacity: 0.9;font-size:20px;border-radius:0 0 10px 10px;">
+        <van-icon name="comment-o" style="font-size: 24px; padding:10px"/>
+        <span>验证码：{{ code }}</span>
+    </van-notify>
 </template>
 
 <script setup lang="ts">

@@ -8,6 +8,8 @@ export interface getHistoryPlanRes {
         plan_id: number,
         title: string,
         create_time: number,
+        status: string,
+        fail_reason: string | null,
     }[]
 }
 
@@ -18,7 +20,7 @@ export interface getShareDetailRes {
     title: string,
     plan_create_time: number,
     username: string,
-    content: TravelDetail
+    content: TravelDetail,
 }
 
 //获取分享方案详情的响应
@@ -40,7 +42,9 @@ export interface getCollectPlanRes {
         plan_id: number,
         title: string,
         plan_time: number,
-        collect_time: number
+        collect_time: number,
+        plan_status: string,
+        plan_fail_reason: string | null,
     }[]
 }
 
@@ -50,13 +54,37 @@ export interface getSharedPlanRes {
     nextCursor: number | null,
     hasMore: boolean,
     sharedPlanList: {
-        share_id:number,
-        share_expire_time:number,
+        share_id: number,
+        share_expire_time: number,
         plan_id: number,
         code: string,
         share_is_cancel: number,
         title: string,
         plan_create_time: number,
-        share_time:number,
+        share_time: number,
+        plan_status: string,
+        plan_fail_reason: string | null,
     }[]
+}
+
+
+//各自数组的子项
+export type RawPlanItem = getHistoryPlanRes['planResult'][number]
+    | getCollectPlanRes['collectPlan'][number]
+    | getSharedPlanRes['sharedPlanList'][number]
+//把三种数组的子项结合一下，抽出意义相同但是字段不同的
+export type StandardPlanItem = {
+    itemKey: number,
+    title: string,
+    planId:number,
+    generateTime: number,
+    state: string,
+    failReason: string | null,
+    collectTime?: number,
+    shareTime?: number,
+    code?:string,
+    isShareCancel?:boolean,
+    timeText?:string,
+    shareExpireTime?:number,
+    raw: RawPlanItem,
 }

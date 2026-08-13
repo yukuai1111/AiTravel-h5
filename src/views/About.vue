@@ -25,7 +25,7 @@
             <van-cell-group inset title="📌 核心功能">
                 <van-cell title="智能生成方案" label="多天行程 + 预算分配 + JSON 结构化输出" />
                 <van-cell title="流式对话" label="SSE 实现打字机效果，实时响应" />
-                <van-cell title="方案管理" label="历史记录 + 收藏 + 分享功能" />
+                <van-cell title="方案管理" label="历史记录 + 方案重试 + 收藏 + 分享功能" />
                 <van-cell title="多模型降级" label="云端模型 → 本地 Ollama" />
             </van-cell-group>
 
@@ -44,7 +44,7 @@
                 <van-cell title="前端" value="Vue 3 + TypeScript + Vant + Pinia +Router" />
                 <van-cell title="后端" value="Node.js + Express + MySQL" />
                 <van-cell title="AI 模型" value="智谱 GLM-4.7-Flash  / Ollama" />
-                <van-cell title="部署" value="Docker + Nginx" />
+                <van-cell title="部署" value="Ubuntu + PM2 + Nginx" />
             </van-cell-group>
 
             <!-- 接口文档 -->

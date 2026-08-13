@@ -5,7 +5,7 @@ import type { getHistoryPlanRes, getShareDetailRes, getDetailRes,getCollectPlanR
 
 //获取旅游规划
 export const getPlan = async (data: PlanFormData, signal?: AbortSignal) => {
-    return post<PlanFormData, { plan_id: number, planData: TravelDetail }>('/travel/recommend', data, signal)
+    return post<PlanFormData, { plan_id: number, planData: TravelDetail,retry_id?:number,failReason?:string }>('/travel/recommend', data, signal)
 }
 
 //获取历史方案列表
@@ -46,13 +46,13 @@ export const cancelCollectPlan=async (plan_id:number)=>{
 }
 
 //获取收藏方案列表
-export const getCollectPlan=async ()=>{
-    return get<unknown,getCollectPlanRes>('/travel/collectionList')
+export const getCollectPlan=async (pageSize?:number,cursor?:number|null)=>{
+    return get<{pageSize?:number,cursor?:number|null},getCollectPlanRes>('/travel/collectionList',{pageSize,cursor})
 }
 
 //获取已分享的方案列表
-export const sharedPlan=async ()=>{
-    return get<unknown,getSharedPlanRes>('/travel/sharedList')
+export const sharedPlan=async (pageSize?:number,cursor?:number|null)=>{
+    return get<{pageSize?:number,cursor?:number|null},getSharedPlanRes>('/travel/sharedList',{pageSize,cursor})
 }
 
 //取消分享方案

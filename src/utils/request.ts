@@ -155,7 +155,7 @@ export const streamPost = async (url: string,
     try {
         const userStore = useUserStore()
         if (!userStore.isLogin) { throw new Error('请先登录') }
-        const res = await fetch(`http://127.0.0.1:3000/api/travel/${url}`, {
+        const res = await fetch(`${baseURL}/travel${url}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
