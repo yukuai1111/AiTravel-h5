@@ -110,7 +110,7 @@ const handlePlan = () => {
     //判断有没有登陆，没有登陆的话蹦出弹窗
     if (!requireAuth()) return
 
-    if (!allCities.includes(formData.city)) {
+    if (formData.city && !allCities.includes(formData.city)) {
         showFailToast('请选择正确的城市')
         formData.city = ''
         return
@@ -122,7 +122,7 @@ const handlePlan = () => {
     //生成队列唯一的id
     const queueId = `plan_${Date.now()}`
     //判断是否方案队列已满
-    if(aiStore.isMatchMax)return showFailToast('最多只能生成2个方案哦，请耐心等待~')
+    if (aiStore.isMatchMax) return showFailToast('最多只能生成2个方案哦，请耐心等待~')
     //判断id是否重复
     if (!aiStore.addPlan(queueId)) return showFailToast('方案已经存在哦，请耐心等待~')
 

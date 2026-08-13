@@ -121,7 +121,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref, onUnmounted } from 'vue';
+import { onMounted, reactive, ref} from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import type { PlanFormData } from '@/interfaces/home'
 import type { TravelDetail } from '@/interfaces/api'
@@ -382,13 +382,6 @@ onMounted(() => {
     }
 })
 
-// onUnmounted(() => {
-//     //用户离开页面时如果还有队列和控制器，清除队列和控制器
-//     if (queueId.value && aiStore.plans.includes(queueId.value)) {
-//         aiStore.removePlan(queueId.value)
-//         aiStore.removeController(queueId.value)
-//     }
-// })
 </script>
 
 <style scoped lang="scss">
