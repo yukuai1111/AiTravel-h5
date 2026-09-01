@@ -52,7 +52,6 @@ onMounted(() => {
     if (data) {
         previewAvatar.value = data
     } else {
-        console.log('没有图片数据')
         showToast('没有图片数据，请重试')
         loading.value = false
         setTimeout(() => {
@@ -70,7 +69,6 @@ watch(previewAvatar, async (newVal) => {
     img.src = newVal
 
     img.onload = async () => {
-        console.log('✓ 图片资源加载完成，等待cropper渲染')
         await nextTick()
         // 短暂延时，留给vue-cropper渲染时间
         setTimeout(() => {
@@ -79,7 +77,6 @@ watch(previewAvatar, async (newVal) => {
     }
 
     img.onerror = () => {
-        console.log('✗ 图片资源加载失败')
         loading.value = false
         showToast('图片加载失败')
         setTimeout(() => {
@@ -99,7 +96,6 @@ const confirmCrop = () => {
     //它会根据当前裁剪框的位置，把框内的图片截出来，生成一个 Blob 对象
     //Blob 是浏览器里的二进制数据对象，类似 File
     cropperRef.value.getCropBlob((blob: Blob | null) => {
-        console.log('getCropBlob 结果:', blob)
         // 如果 blob 为空，说明裁剪失败
         if (!blob) {
             showToast('裁剪失败')

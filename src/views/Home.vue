@@ -129,8 +129,6 @@ const handlePlan = () => {
     if (planLoading.value) return showFailToast('请稍后再试')
 
     planLoading.value = true
-    console.log('准备跳转详情页', formData.queue_id)
-    console.log('跳转前', aiStore.plans)
     router.push({
         name: 'detail',
         query: {

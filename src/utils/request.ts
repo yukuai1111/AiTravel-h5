@@ -55,8 +55,7 @@ server.interceptors.response.use(
         //403是refreshToken有误或者token版本不一致，需要重新登陆
         if (res && (res.data.status === 401 || res.data.status === 403)) {
             //跳转个人中心页登录
-            router.push({ name: 'profile', query: { msg: res.data.msg } }).catch(err => {
-                console.log('跳转失败:', err)
+            router.push({ name: 'profile', query: { msg: res.data.msg } }).catch(() => {
             })
             //清空用户信息
             const userStore = useUserStore()
@@ -96,7 +95,7 @@ server.interceptors.response.use(
                         query: { msg: err as string || '登录已过期，请重新登录' }
                     }
                     ).catch(() => {
-                        console.log('跳转失败:', err)
+                  
                     })
                     return Promise.reject(err instanceof Error ? err.message : '登录已过期，请重新登录')
                 }
@@ -179,7 +178,6 @@ export const streamPost = async (url: string,
                         msg: data.msg
                     }
                 }).catch(() => {
-                    console.log('跳转失败:', data.msg)
                 })
                 return
                 //返回后，后续的代码就不会执行了
@@ -191,7 +189,6 @@ export const streamPost = async (url: string,
                     const userStore = useUserStore()
                     userStore.clearUserInfo()
                     router.push({ name: 'profile', query: { msg: data.msg } }).catch(() => {
-                        console.log('跳转失败:', data.msg)
                     })
                     return
                 }

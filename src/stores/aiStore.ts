@@ -9,7 +9,6 @@ export const useAIStore = defineStore('ai', () => {
 
     //创建新的取消控制器（开始某个ai -> 开始聊天/方案生成）
     const createController = (id: string) => {
-        console.log(`创建控制器${id}的请求`)
         //创建新的控制器
         const newController = new AbortController()
         //添加到控制器池
@@ -20,7 +19,6 @@ export const useAIStore = defineStore('ai', () => {
 
     //清除单个取消控制器（停止某个ai -> 切换聊天页/方案生成成功或失败）
     const removeController = (id: string) => {
-        console.log(`清除控制器${id}的请求`)
         const controller = controllers.value.get(id)  //找到控制器
         if (controller) {
             //1.取消请求
@@ -34,7 +32,6 @@ export const useAIStore = defineStore('ai', () => {
     const removeControllerAll = () => {
         //遍历控制器池，清除每一个请求
         for (const [id, controller] of controllers.value) {
-            console.log(`清除控制器${id}的请求`)
             controller.abort()
         }
         //清除控制器池
@@ -50,12 +47,10 @@ export const useAIStore = defineStore('ai', () => {
     const addPlan = (id: string) => {
         //判断队列是否已满
         if (isMatchMax.value) {
-            console.log('队列已满，不再请求')
             return false
         }
         //判断id是否已存在队列
         if (plans.value.includes(id)) {
-            console.log('队列已存在该方案，不再请求')
             return false
         }
         plans.value.push(id)

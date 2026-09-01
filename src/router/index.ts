@@ -82,10 +82,10 @@ const routes = [
     }
 ]
 
-const basePath=import.meta.env.MODE==='development'?'/':'/project/AiTravel-h5/'
+
 //创建路由对象
 const router = createRouter({
-    history: createWebHistory(basePath), // 路由基础路径,防止触发路由守卫
+    history: createWebHistory('/'), // 路由基础路径,防止触发路由守卫
     routes
 })
 

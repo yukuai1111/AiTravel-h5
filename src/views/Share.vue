@@ -39,7 +39,6 @@ const getSharedPlanList = async (isRefresh: boolean) => {
         const res = await sharedPlan(6, nextCursor.value)
         if (res.data) {
             sharedPlanList.value =[...sharedPlanList.value, ...res.data.sharedPlanList]
-            console.log(sharedPlanList.value)
             nextCursor.value = res.data.nextCursor
             hasMore.value = res.data.hasMore
         }

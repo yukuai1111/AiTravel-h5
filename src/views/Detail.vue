@@ -273,7 +273,6 @@ const getDetail = async () => {
             plan_detail.create_time = res.data.create_time
             plan_detail.content = res.data.content
             plan_detail.is_collected = res.data.is_collected
-            // console.log('方案详情', plan_detail)
             //先把旧标题保存
             oldTitle.value = plan_detail.title
         }
@@ -351,7 +350,6 @@ const handlePassed = async () => {
 
     try {
         const res = await changePlanTitle({ plan_id: plan_id.value, title: plan_detail.title })
-        // console.log(res)
         if (res.data) {
             showToast('修改标题成功')
             plan_detail.title = res.data.newTitle

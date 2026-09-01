@@ -116,7 +116,6 @@ const shareDetail = reactive<getShareDetailRes>({
 const getDetail = async () => {
     try {
         const res = await sharePlanDetail(code.value)
-        console.log(res)
         if (res.data) {
             shareDetail.plan_id = res.data.plan_id
             shareDetail.title = res.data.title
@@ -153,7 +152,6 @@ const downloadPlan = async () => {
     activeNames.value = shareDetail.content.dailyItinerary?.map(item => {
         return item.day as number
     })
-    console.log(activeNames.value)
     showToast('下载中...')
     if (!pdfContent.value || activeNames.value.length !== shareDetail.content.days) return showToast('内容未加载完毕')
     // 等待内容加载完成
@@ -182,8 +180,7 @@ const downloadPlan = async () => {
         .then(() => {
             showToast('下载成功')
         }).catch((err) => {
-            console.log('下载失败', err)
-            showToast('下载失败')
+            showToast(`下载失败：${err}`)
         }).finally(() => {
             downloadLoading.value = false
         })

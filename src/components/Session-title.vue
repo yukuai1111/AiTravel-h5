@@ -45,7 +45,6 @@ const props = defineProps({
 const emit = defineEmits(['changeCollect'])
 //收藏方案
 const collect = async () => {
-    console.log('收藏', props.plan_id)
     try {
         if (props.plan_id) { 
             await collectPlan(props.plan_id)
@@ -63,7 +62,6 @@ const collect = async () => {
 }
 //取消收藏方案
 const cancelCollect = async () => {
-    console.log('取消收藏', props.plan_id)
      try {
         if (props.plan_id) {
             await cancelCollectPlan(props.plan_id)

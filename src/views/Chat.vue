@@ -142,7 +142,6 @@ const fetchStream = async (userMsg: string) => {
         (err) => {
             const lastMessage = messages.value[messages.value.length - 1]
             if (lastMessage && lastMessage.role === 'ai') {
-                console.log("ai错误", err)
                 lastMessage.content = `抱歉，AI助手发生错误:${err}`
                 showToast("AI回复失败！")
             } else {

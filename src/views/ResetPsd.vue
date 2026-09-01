@@ -83,8 +83,7 @@ const handleChangePsd = async () => {
             //清除用户信息
             userStore.clearUserInfo()
             //跳转个人中心页登录
-            router.push({ name: 'profile', query: { msg: '修改成功，请重新登录' } }).catch(err => {
-                console.log('跳转失败:', err)
+            router.push({ name: 'profile', query: { msg: '修改成功，请重新登录' } }).catch(()=> {
             })
         } catch (err: unknown) {
             if (err instanceof Error) {
@@ -107,8 +106,7 @@ const handleChangePsd = async () => {
             //清除用户信息
             userStore.clearUserInfo()
             //跳转个人中心页登录
-            router.push({ name: 'profile', query: { msg: '修改成功，请重新登录' } }).catch(err => {
-                console.log('跳转失败:', err)
+            router.push({ name: 'profile', query: { msg: '修改成功，请重新登录' } }).catch(() => {
             })
         } catch (err: unknown) {
             if (err instanceof Error) {

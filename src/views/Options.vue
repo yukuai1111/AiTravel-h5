@@ -47,15 +47,11 @@ const handleLogout = () => {
     })
         .then(async () => {
             try {
-                console.log('用户退出登录')
                 const res=await logout(userStore.refreshToken)
-                console.log(res)
             } catch (err) {
-                console.log("退出登陆错误", err)
+               
             } finally {
-                console.log('进入了finally，开始清除userinfo',userStore.userInfo)
                 userStore.clearUserInfo()
-                console.log('清除userinfo后',userStore.userInfo)
                 router.push({
                     path: '/profile',
                     query: {

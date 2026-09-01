@@ -131,7 +131,6 @@ const handleDelete = (plan_id: number) => {
         try {
             //如果是生成中，就先删除队列/请求
             const plan = renderList.value.find(item => item.planId === plan_id)
-            console.log('plan', plan)
             if (plan && plan.state === 'pending' && plan.queue_id) {
                 aiStore.removePlan(plan.queue_id)
                 aiStore.removeController(plan.queue_id)
@@ -164,7 +163,6 @@ const handleShare = async (plan_id: number) => {
             const basePath = import.meta.env.BASE_URL
             //http://127.0.0.1:5173/share?code=mskgnut91nfR
             share_url.value = `${domain}${basePath}sharePage?code=${res.data.shareCode}&time=${res.data.share_time}`
-            console.log(share_url.value)
             showSharePopup.value = true
         }
     } catch (err: unknown) {

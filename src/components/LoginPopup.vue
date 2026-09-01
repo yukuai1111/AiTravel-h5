@@ -29,8 +29,8 @@
                     <div class="popup-header">注册</div>
                     <div class="popup-content">
                         <van-form class="form">
-                            <van-field class="form-item" v-model="formData.username" maxlength="10" label="用户名"
-                                placeholder="请输入用户名" />
+                            <van-field class="form-item" v-model="formData.username" maxlength="20" label="用户名"
+                                placeholder="请输入3-20位用户名" />
                             <van-field class="form-item" v-model="formData.code" center clearable label="验证码"
                                 placeholder="请输入验证码">
                                 <template #button>
@@ -43,7 +43,7 @@
                             </van-field>
                             <!-- 发来了验证码后并输入验证码才有密码框 -->
                             <van-field class="form-item" v-if="isShowPsd" v-model="formData.password" maxlength="12"
-                                label="密码" placeholder="请输入密码" />
+                                label="密码" placeholder="请输入6-12位密码" />
                             <van-field class="form-item" v-if="isShowPsd" v-model="formData.confirmPassword"
                                 maxlength="12" label="确认密码" placeholder="请再次输入密码" />
                             <div class="other-action" style="justify-content: center;">
@@ -392,7 +392,6 @@ const handleVerifyCode = async () => {
     //登录时的忘记密码，只判断验证码
     try {
         const res = await verifyLoginForgetCode({ username: props.username, code: formData.code.trim() })
-        console.log(res)
         if (res.data) {
             //验证码判断正确就可以关闭弹窗
             handleClose()
